@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "todo-integrator",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Sync Obsidian checkboxes with Microsoft Todo tasks",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -20,5 +20,10 @@
 		"obsidian": "latest",
 		"tslib": "2.4.0",
 		"typescript": "4.7.4"
+	},
+	"dependencies": {
+		"@azure/msal-node": "^3.6.0",
+		"@microsoft/microsoft-graph-client": "^3.0.7",
+		"isomorphic-fetch": "^3.0.0"
 	}
 }
