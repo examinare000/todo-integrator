@@ -1,22 +1,22 @@
 import { Plugin, Notice } from 'obsidian';
 
 // Core components
-import { Logger } from './src/utils/logger';
-import { ErrorHandler } from './src/utils/error-handler';
-import { PluginSettings } from './src/settings/plugin-settings';
-import { MSALAuthenticationManager } from './src/auth/msal-authentication-manager';
-import { TodoApiClient } from './src/api/todo-api-client';
-import { DailyNoteManager } from './src/daily-note/daily-note-manager';
-import { ObsidianTodoParser } from './src/parser/obsidian-todo-parser';
-import { TodoSynchronizer } from './src/sync/todo-synchronizer';
+import { Logger } from './utils/logger';
+import { ErrorHandler } from './utils/error-handler';
+import { PluginSettings } from './settings/plugin-settings';
+import { MSALAuthenticationManager } from './auth/msal-authentication-manager';
+import { TodoApiClient } from './api/todo-api-client';
+import { DailyNoteManager } from './daily-note/daily-note-manager';
+import { ObsidianTodoParser } from './parser/obsidian-todo-parser';
+import { TodoSynchronizer } from './sync/todo-synchronizer';
 
 // UI components
-import { TodoIntegratorSettingsTab } from './src/ui/settings-tab';
-import { SidebarButton } from './src/ui/sidebar-button';
-import { AuthenticationModal } from './src/ui/authentication-modal';
+import { TodoIntegratorSettingsTab } from './ui/settings-tab';
+import { SidebarButton } from './ui/sidebar-button';
+import { AuthenticationModal } from './ui/authentication-modal';
 
 // Types
-import { DEFAULT_SETTINGS, SyncResult } from './src/types';
+import { DEFAULT_SETTINGS, SyncResult } from './types';
 
 export default class TodoIntegratorPlugin extends Plugin {
 	private logger: Logger;
@@ -84,7 +84,7 @@ export default class TodoIntegratorPlugin extends Plugin {
 			this.logger,
 			this.errorHandler,
 			() => this.loadData(),
-			(data: any) => this.saveData(data)
+			(data) => this.saveData(data)
 		);
 
 		this.authManager = new MSALAuthenticationManager(this.logger, this.errorHandler);
@@ -148,9 +148,14 @@ export default class TodoIntegratorPlugin extends Plugin {
 	}
 
 	private createSidebarButton(): void {
-		// For now, we'll add the sync functionality via commands and ribbon
-		// Sidebar button placement would need more complex DOM manipulation
-		this.logger.debug('Sidebar button functionality available via ribbon and commands');
+		// Find an appropriate place for the sidebar button
+		const leftSplit = this.app.workspace.leftSplit;
+		if (leftSplit) {
+			const containerEl = leftSplit.containerEl.querySelector('.workspace-tab-container');
+			if (containerEl) {
+				this.sidebarButton.createSyncButton(containerEl as HTMLElement);
+			}
+		}
 	}
 
 	private async initializeAfterAuth(): Promise<void> {
@@ -249,7 +254,7 @@ export default class TodoIntegratorPlugin extends Plugin {
 
 		try {
 			this.logger.info('Manual sync initiated');
-			// this.sidebarButton.showSyncProgress(); // Will implement later
+			this.sidebarButton.showSyncProgress();
 
 			const result: SyncResult = await this.todoSynchronizer.performFullSync();
 
@@ -315,6 +320,9 @@ export default class TodoIntegratorPlugin extends Plugin {
 
 	private cleanup(): void {
 		this.stopAutoSync();
-		this.logger.debug('Plugin cleanup completed');
+		
+		if (this.sidebarButton) {
+			this.sidebarButton.unload();
+		}
 	}
 }
