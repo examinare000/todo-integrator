@@ -1,8 +1,185 @@
-/*
+/* 認証モーダルのスタイル */
+.auth-progress {
+    margin-bottom: 20px;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--background-modifier-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
 
-If your plugin does not need CSS, delete this file.
+.progress-fill {
+    height: 100%;
+    background-color: var(--interactive-accent);
+    transition: width 0.3s ease;
+}
 
-*/
+.progress-text {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.auth-status {
+    margin-bottom: 20px;
+}
+
+.auth-status h3 {
+    margin-bottom: 10px;
+    color: var(--text-normal);
+}
+
+.device-code-instructions {
+    padding: 15px;
+    background-color: var(--background-secondary);
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.device-code-instructions ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.device-code-instructions li {
+    margin: 5px 0;
+    color: var(--text-normal);
+}
+
+.code-display {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.device-code {
+    font-size: 18px;
+    font-weight: bold;
+    background-color: var(--background-primary);
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 2px solid var(--interactive-accent);
+    color: var(--interactive-accent);
+    letter-spacing: 2px;
+    user-select: all;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.auth-buttons button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.auth-buttons button:first-child {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.auth-buttons button:first-child:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.auth-buttons button:nth-child(2) {
+    background-color: var(--interactive-normal);
+    color: var(--text-normal);
+}
+
+.auth-buttons button:nth-child(2):hover {
+    background-color: var(--interactive-hover);
+}
+
+.auth-buttons button:last-child {
+    background-color: var(--background-modifier-border);
+    color: var(--text-muted);
+}
+
+.auth-buttons button:last-child:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* 設定画面のアカウント状態表示 */
+.account-status {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.status-connected {
+    background-color: var(--background-secondary);
+}
+
+.status-disconnected {
+    background-color: var(--background-secondary);
+}
+
+.status-indicator {
+    font-size: 16px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.status-connected-text {
+    color: var(--text-success);
+}
+
+.status-disconnected-text {
+    color: var(--text-error);
+}
+
+.user-info {
+    margin: 5px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.expiry-info {
+    font-size: 12px;
+    font-style: italic;
+}
+
+.status-message {
+    margin: 10px 0 0 0;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.disconnect-button {
+    background-color: var(--interactive-normal) !important;
+    color: var(--text-error) !important;
+}
+
+.disconnect-button:hover {
+    background-color: var(--interactive-hover) !important;
+}
+
+.setup-instructions {
+    padding: 15px;
+    background-color: var(--background-secondary);
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.setup-instructions ol {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.setup-instructions li {
+    margin: 8px 0;
+    color: var(--text-normal);
+}
