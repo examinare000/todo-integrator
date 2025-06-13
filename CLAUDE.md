@@ -30,3 +30,8 @@ This is an Obsidian plugin built with TypeScript. The plugin demonstrates core O
 - Production builds are minified without source maps
 - TypeScript strict null checks enabled
 - Plugin installs to `.obsidian/plugins/your-plugin-name/` in vault
+
+## Git Commit Guidelines
+- Use Japanese commit messages (one line)
+- Do NOT include "Generated with Claude Code" or "Co-Authored-By: Claude" in commit messages
+- Keep commit messages simple and descriptive
