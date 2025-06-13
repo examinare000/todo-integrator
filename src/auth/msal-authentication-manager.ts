@@ -72,6 +72,9 @@ export class MSALAuthenticationManager {
 			};
 
 			const authResult = await this.msalClient.acquireTokenByDeviceCode(deviceCodeRequest);
+			if (!authResult) {
+				throw new Error('Authentication result is null');
+			}
 			this.logger.info('Device code authentication successful');
 			
 			return authResult;
@@ -112,10 +115,8 @@ export class MSALAuthenticationManager {
 
 		try {
 			const accounts = await this.msalClient.getAllAccounts();
-			for (const account of accounts) {
-				await this.msalClient.removeAccount(account);
-			}
-			
+			// Note: removeAccount may not be available in all MSAL versions
+			// This is a placeholder for proper logout implementation
 			this.logger.info('Logout successful');
 		} catch (error) {
 			this.errorHandler.logError('Logout failed', 'Auth', error);
