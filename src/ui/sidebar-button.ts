@@ -39,7 +39,8 @@ export class SidebarButton extends Component {
 		setIcon(iconEl, 'sync');
 
 		// Add text
-		this.buttonEl.createSpan('sync-text', { text: 'Sync ToDo' });
+		const textSpan = this.buttonEl.createSpan('sync-text');
+		textSpan.textContent = 'Sync ToDo';
 
 		// Add status indicator
 		this.statusEl = this.containerEl.createDiv('sync-status');
@@ -120,7 +121,8 @@ export class SidebarButton extends Component {
 		const iconEl = this.statusEl.createSpan('status-icon');
 		setIcon(iconEl, iconName);
 		
-		this.statusEl.createSpan('status-text', { text: statusText });
+		const statusTextSpan = this.statusEl.createSpan('status-text');
+		statusTextSpan.textContent = statusText;
 
 		this.logger.debug(`Sync status updated: ${status}`);
 	}
