@@ -46,7 +46,7 @@ interface ObsidianTask {
 	todoId?: string;
 }
 
-const DEFAULT_SETTINGS: TodoIntegratorSettings = {
+export const DEFAULT_SETTINGS: TodoIntegratorSettings = {
 	clientId: '',
 	tenantId: 'common',
 	watchDirectory: '',
@@ -135,30 +135,53 @@ export default class TodoIntegratorPlugin extends Plugin {
 		authModal.open();
 
 		try {
+			// MSALクライアントの初期化（最新仕様）
 			this.msalClient = new PublicClientApplication({
 				auth: {
 					clientId: this.settings.clientId,
-					authority: `https://login.microsoftonline.com/${this.settings.tenantId}`
+					authority: this.settings.tenantId ? 
+						`https://login.microsoftonline.com/${this.settings.tenantId}` : 
+						'https://login.microsoftonline.com/common'
+				},
+				system: {
+					loggerOptions: {
+						loggerCallback: (level, message, containsPii) => {
+							if (containsPii) return;
+							console.log(`MSAL [${level}]: ${message}`);
+						},
+						piiLoggingEnabled: false,
+						logLevel: 3 // Info level
+					}
 				}
 			});
 
+			// キャッシュからアカウントを取得
 			const accounts = await this.msalClient.getAllAccounts();
-			let authResult;
+			let authResult = null;
 			
+			// サイレント認証を試行
 			if (accounts.length > 0) {
-				authResult = await this.msalClient.acquireTokenSilent({
-					scopes: ['https://graph.microsoft.com/Tasks.ReadWrite'],
-					account: accounts[0]
-				}).catch(() => null);
+				try {
+					authResult = await this.msalClient.acquireTokenSilent({
+						scopes: ['https://graph.microsoft.com/Tasks.ReadWrite'],
+						account: accounts[0]
+					});
+				} catch (silentError) {
+					console.log('Silent authentication failed:', silentError);
+					// サイレント認証に失敗した場合はデバイスコードフローを使用
+				}
 			}
 			
+			// サイレント認証が失敗した場合はデバイスコードフローを使用
 			if (!authResult) {
-				authResult = await this.msalClient.acquireTokenByDeviceCode({
+				const deviceCodeRequest = {
 					scopes: ['https://graph.microsoft.com/Tasks.ReadWrite'],
-					deviceCodeCallback: (response) => {
+					deviceCodeCallback: (response: any) => {
 						authModal.showDeviceCodeInstructions(response.userCode, response.verificationUri);
 					}
-				});
+				};
+
+				authResult = await this.msalClient.acquireTokenByDeviceCode(deviceCodeRequest);
 			}
 
 			if (authResult) {
@@ -175,7 +198,21 @@ export default class TodoIntegratorPlugin extends Plugin {
 			}
 		} catch (error) {
 			console.error('Authentication failed:', error);
-			const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
+			
+			// エラー詳細の解析
+			let errorMessage = '不明なエラーが発生しました';
+			if (error instanceof Error) {
+				if (error.message.includes('invalid_client')) {
+					errorMessage = 'Client IDまたはアプリ設定が無効です。Azure App Registrationの設定を確認してください。';
+				} else if (error.message.includes('invalid_scope')) {
+					errorMessage = 'APIアクセス許可が不足しています。Tasks.ReadWriteが追加されているか確認してください。';
+				} else if (error.message.includes('network')) {
+					errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+				} else {
+					errorMessage = `認証エラー: ${error.message}`;
+				}
+			}
+			
 			authModal.showError(errorMessage);
 			new Notice('認証に失敗しました。詳細はコンソールを確認してください。');
 		}
@@ -184,12 +221,21 @@ export default class TodoIntegratorPlugin extends Plugin {
 	async initializeGraphClient() {
 		if (!this.settings.accessToken) return;
 
+		// Microsoft Graph Client の最新初期化方式
 		this.graphClient = Client.init({
-			authProvider: async () => {
-				if (Date.now() > this.settings.tokenExpiry) {
-					await this.refreshAccessToken();
+			authProvider: async (done) => {
+				try {
+					// トークンの有効期限をチェック
+					if (Date.now() > this.settings.tokenExpiry) {
+						await this.refreshAccessToken();
+					}
+					
+					// Bearer トークンを返す
+					done(null, `Bearer ${this.settings.accessToken}`);
+				} catch (error) {
+					console.error('Auth provider error:', error);
+					done(error, null);
 				}
-				return this.settings.accessToken;
 			}
 		});
 
@@ -357,11 +403,22 @@ export default class TodoIntegratorPlugin extends Plugin {
 		if (!this.settings.accessToken) return;
 
 		try {
+			// ユーザー情報取得用の一時的なGraphクライアント
 			const tempGraphClient = Client.init({
-				authProvider: async () => this.settings.accessToken
+				authProvider: async (done) => {
+					try {
+						done(null, `Bearer ${this.settings.accessToken}`);
+					} catch (error) {
+						done(error, null);
+					}
+				}
 			});
 
-			const user = await tempGraphClient.api('/me').get();
+			const user = await tempGraphClient
+				.api('/me')
+				.select('displayName,mail,userPrincipalName')
+				.get();
+				
 			this.settings.userEmail = user.mail || user.userPrincipalName || '';
 			this.settings.userName = user.displayName || '';
 		} catch (error) {
