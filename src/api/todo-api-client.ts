@@ -45,10 +45,10 @@ export class TodoApiClient {
 				});
 			}
 			
-			this.listId = obsidianList.id;
+			this.listId = obsidianList.id || '';
 			this.logger.info(`Using task list: ${listName} (ID: ${this.listId})`);
 			
-			return this.listId;
+			return this.listId || '';
 		} catch (error) {
 			const errorMessage = this.errorHandler.handleApiError(error);
 			throw new Error(`Failed to get/create task list: ${errorMessage}`);
