@@ -9,7 +9,8 @@ import {
 	Setting, 
 	TFile,
 	Vault,
-	Component
+	Component,
+	ButtonComponent
 } from 'obsidian';
 import { Client } from '@microsoft/microsoft-graph-client';
 import { PublicClientApplication, AuthenticationResult } from '@azure/msal-node';
@@ -22,6 +23,8 @@ interface TodoIntegratorSettings {
 	accessToken: string;
 	refreshToken: string;
 	tokenExpiry: number;
+	userEmail: string;
+	userName: string;
 }
 
 interface TodoTask {
@@ -49,7 +52,9 @@ const DEFAULT_SETTINGS: TodoIntegratorSettings = {
 	watchDirectory: '',
 	accessToken: '',
 	refreshToken: '',
-	tokenExpiry: 0
+	tokenExpiry: 0,
+	userEmail: '',
+	userName: ''
 };
 
 export default class TodoIntegratorPlugin extends Plugin {
@@ -121,12 +126,15 @@ export default class TodoIntegratorPlugin extends Plugin {
 	}
 
 	async authenticateWithMicrosoft() {
-		try {
-			if (!this.settings.clientId) {
-				new Notice('Please set your Microsoft App Client ID in settings first');
-				return;
-			}
+		if (!this.settings.clientId) {
+			new Notice('設定でMicrosoft App Client IDを設定してください');
+			return;
+		}
 
+		const authModal = new AuthProgressModal(this.app);
+		authModal.open();
+
+		try {
 			this.msalClient = new PublicClientApplication({
 				auth: {
 					clientId: this.settings.clientId,
@@ -148,7 +156,7 @@ export default class TodoIntegratorPlugin extends Plugin {
 				authResult = await this.msalClient.acquireTokenByDeviceCode({
 					scopes: ['https://graph.microsoft.com/Tasks.ReadWrite'],
 					deviceCodeCallback: (response) => {
-						new Notice(`Go to ${response.verificationUri} and enter code: ${response.userCode}`);
+						authModal.showDeviceCodeInstructions(response.userCode, response.verificationUri);
 					}
 				});
 			}
@@ -156,13 +164,20 @@ export default class TodoIntegratorPlugin extends Plugin {
 			if (authResult) {
 				this.settings.accessToken = authResult.accessToken;
 				this.settings.tokenExpiry = authResult.expiresOn?.getTime() || 0;
+				
+				// ユーザー情報を取得
+				await this.fetchUserInfo();
+				
 				await this.saveSettings();
 				await this.initializeGraphClient();
-				new Notice('Successfully authenticated with Microsoft!');
+				authModal.showSuccess();
+				new Notice('Microsoft認証が成功しました！');
 			}
 		} catch (error) {
 			console.error('Authentication failed:', error);
-			new Notice('Authentication failed. Check console for details.');
+			const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
+			authModal.showError(errorMessage);
+			new Notice('認証に失敗しました。詳細はコンソールを確認してください。');
 		}
 	}
 
@@ -338,10 +353,171 @@ export default class TodoIntegratorPlugin extends Plugin {
 		}
 	}
 
+	async fetchUserInfo() {
+		if (!this.settings.accessToken) return;
+
+		try {
+			const tempGraphClient = Client.init({
+				authProvider: async () => this.settings.accessToken
+			});
+
+			const user = await tempGraphClient.api('/me').get();
+			this.settings.userEmail = user.mail || user.userPrincipalName || '';
+			this.settings.userName = user.displayName || '';
+		} catch (error) {
+			console.error('Failed to fetch user info:', error);
+		}
+	}
+
+	isAuthenticated(): boolean {
+		return !!(this.settings.accessToken && Date.now() < this.settings.tokenExpiry);
+	}
+
+	async disconnectAccount() {
+		this.settings.accessToken = '';
+		this.settings.refreshToken = '';
+		this.settings.tokenExpiry = 0;
+		this.settings.userEmail = '';
+		this.settings.userName = '';
+		this.graphClient = undefined as any;
+		this.listId = '';
+		this.taskMap.clear();
+		await this.saveSettings();
+		new Notice('Microsoftアカウントの連携を解除しました');
+	}
+
 	startWatching() {
 		if (this.settings.watchDirectory) {
 			new Notice(`Started watching ${this.settings.watchDirectory} for new todos`);
 		}
+	}
+}
+
+class AuthProgressModal extends Modal {
+	private progressEl: HTMLElement;
+	private instructionsEl: HTMLElement;
+	private statusEl: HTMLElement;
+	private copyButton: ButtonComponent;
+	private currentStep: number = 0;
+	private deviceCode: string = '';
+	private verificationUri: string = '';
+
+	constructor(app: App) {
+		super(app);
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+
+		contentEl.createEl('h2', { text: 'Microsoft アカウント認証' });
+
+		this.progressEl = contentEl.createDiv('auth-progress');
+		this.updateProgress(0);
+
+		this.statusEl = contentEl.createDiv('auth-status');
+		this.statusEl.createEl('p', { text: '認証を開始しています...' });
+
+		this.instructionsEl = contentEl.createDiv('auth-instructions');
+		this.instructionsEl.hide();
+
+		const buttonContainer = contentEl.createDiv('auth-buttons');
+		buttonContainer.hide();
+
+		this.copyButton = new ButtonComponent(buttonContainer)
+			.setButtonText('認証コードをコピー')
+			.onClick(() => {
+				navigator.clipboard.writeText(this.deviceCode);
+				new Notice('認証コードがクリップボードにコピーされました');
+			});
+
+		new ButtonComponent(buttonContainer)
+			.setButtonText('ブラウザーで開く')
+			.onClick(() => {
+				window.open(this.verificationUri, '_blank');
+			});
+
+		new ButtonComponent(buttonContainer)
+			.setButtonText('キャンセル')
+			.onClick(() => {
+				this.close();
+			});
+	}
+
+	updateProgress(step: number) {
+		this.currentStep = step;
+		const steps = [
+			'認証を開始中...',
+			'認証コードを生成中...',
+			'ユーザー認証を待機中...',
+			'認証完了'
+		];
+
+		this.progressEl.empty();
+		
+		const progressBar = this.progressEl.createDiv('progress-bar');
+		const progressFill = progressBar.createDiv('progress-fill');
+		progressFill.style.width = `${(step / 3) * 100}%`;
+
+		this.progressEl.createEl('p', { 
+			text: `ステップ ${step + 1}/4: ${steps[step]}`,
+			cls: 'progress-text'
+		});
+	}
+
+	showDeviceCodeInstructions(userCode: string, verificationUri: string) {
+		this.deviceCode = userCode;
+		this.verificationUri = verificationUri;
+		
+		this.updateProgress(1);
+		
+		this.statusEl.empty();
+		this.statusEl.createEl('h3', { text: '認証手順' });
+		
+		const instructions = this.statusEl.createDiv('device-code-instructions');
+		instructions.createEl('p', { text: '以下の手順で認証を完了してください：' });
+		
+		const stepsList = instructions.createEl('ol');
+		stepsList.createEl('li', { text: '下の「ブラウザーで開く」ボタンをクリック' });
+		stepsList.createEl('li', { text: 'Microsoft ログインページにサインイン' });
+		stepsList.createEl('li', { text: '以下の認証コードを入力：' });
+		
+		const codeDisplay = instructions.createDiv('code-display');
+		codeDisplay.createEl('code', { text: userCode, cls: 'device-code' });
+		
+		instructions.createEl('p', { text: '認証が完了するまでこのウィンドウを開いたままにしてください。' });
+		
+		this.instructionsEl.show();
+		const buttonContainer = this.contentEl.querySelector('.auth-buttons') as HTMLElement;
+		if (buttonContainer) buttonContainer.show();
+		
+		this.updateProgress(2);
+	}
+
+	showSuccess() {
+		this.updateProgress(3);
+		this.statusEl.empty();
+		this.statusEl.createEl('h3', { text: '認証成功！' });
+		this.statusEl.createEl('p', { text: 'Microsoft Todo との連携が完了しました。' });
+		
+		const buttonContainer = this.contentEl.querySelector('.auth-buttons') as HTMLElement;
+		if (buttonContainer) buttonContainer.hide();
+		
+		setTimeout(() => {
+			this.close();
+		}, 2000);
+	}
+
+	showError(error: string) {
+		this.statusEl.empty();
+		this.statusEl.createEl('h3', { text: '認証エラー' });
+		this.statusEl.createEl('p', { text: error });
+		this.statusEl.createEl('p', { text: '設定を確認してもう一度お試しください。' });
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
 	}
 }
 
@@ -356,6 +532,66 @@ class TodoIntegratorSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+
+		// アカウント連携状態セクション
+		containerEl.createEl('h3', { text: 'アカウント連携状態' });
+		
+		const statusContainer = containerEl.createDiv('account-status');
+		
+		if (this.plugin.isAuthenticated()) {
+			// 連携済み表示
+			const connectedDiv = statusContainer.createDiv('status-connected');
+			connectedDiv.createEl('span', { 
+				text: '✓ 連携済み', 
+				cls: 'status-indicator status-connected-text' 
+			});
+			
+			if (this.plugin.settings.userName) {
+				connectedDiv.createEl('p', { 
+					text: `ユーザー名: ${this.plugin.settings.userName}`,
+					cls: 'user-info'
+				});
+			}
+			
+			if (this.plugin.settings.userEmail) {
+				connectedDiv.createEl('p', { 
+					text: `メールアドレス: ${this.plugin.settings.userEmail}`,
+					cls: 'user-info'
+				});
+			}
+			
+			const expiryDate = new Date(this.plugin.settings.tokenExpiry);
+			connectedDiv.createEl('p', { 
+				text: `認証有効期限: ${expiryDate.toLocaleString('ja-JP')}`,
+				cls: 'user-info expiry-info'
+			});
+			
+			// 連携解除ボタン
+			new Setting(statusContainer)
+				.addButton(button => button
+					.setButtonText('連携を解除')
+					.setClass('disconnect-button')
+					.onClick(async () => {
+						await this.plugin.disconnectAccount();
+						this.display(); // 画面を更新
+					}));
+		} else {
+			// 未連携表示
+			const disconnectedDiv = statusContainer.createDiv('status-disconnected');
+			disconnectedDiv.createEl('span', { 
+				text: '✗ 未連携', 
+				cls: 'status-indicator status-disconnected-text' 
+			});
+			disconnectedDiv.createEl('p', { 
+				text: 'Microsoftアカウントと連携してTodoを同期できます',
+				cls: 'status-message'
+			});
+		}
+
+		containerEl.createEl('hr');
+
+		// 設定セクション
+		containerEl.createEl('h3', { text: '基本設定' });
 
 		new Setting(containerEl)
 			.setName('Microsoft App Client ID')
@@ -390,13 +626,30 @@ class TodoIntegratorSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		containerEl.createEl('hr');
+
+		// 認証セクション
+		containerEl.createEl('h3', { text: '認証' });
+
 		new Setting(containerEl)
-			.setName('Setup Instructions')
-			.setDesc('1. Create a Microsoft App Registration at https://portal.azure.com\n2. Add "Mobile and desktop applications" platform with redirect URI: http://localhost\n3. Enable "Tasks.ReadWrite" API permission\n4. Copy the Client ID above and authenticate')
+			.setName('Microsoft認証')
+			.setDesc('Microsoftアカウントで認証してTodoの同期を開始します')
 			.addButton(button => button
-				.setButtonText('Authenticate')
+				.setButtonText(this.plugin.isAuthenticated() ? '再認証' : '認証')
 				.onClick(() => {
 					this.plugin.authenticateWithMicrosoft();
 				}));
+
+		// セットアップ手順
+		containerEl.createEl('h3', { text: 'セットアップ手順' });
+		const instructionsDiv = containerEl.createDiv('setup-instructions');
+		instructionsDiv.createEl('p', { text: '以下の手順でAzure App Registrationを作成してください：' });
+		
+		const stepsList = instructionsDiv.createEl('ol');
+		stepsList.createEl('li', { text: 'https://portal.azure.com にアクセス' });
+		stepsList.createEl('li', { text: 'App registrations → New registration' });
+		stepsList.createEl('li', { text: 'Redirect URI: "Mobile and desktop applications" で http://localhost を追加' });
+		stepsList.createEl('li', { text: 'API permissions → Add permission → Microsoft Graph → Tasks.ReadWrite' });
+		stepsList.createEl('li', { text: 'Overview → Application (client) IDをコピーして上記に入力' });
 	}
 }
