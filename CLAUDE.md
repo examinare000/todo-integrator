@@ -36,3 +36,4 @@ This is an Obsidian plugin built with TypeScript. The plugin demonstrates core O
 - Use Japanese commit messages (one line)
 - Do NOT include "Generated with Claude Code" or "Co-Authored-By: Claude" in commit messages
 - Keep commit messages simple and descriptive
+- Default branch is `main` (not `master`)
