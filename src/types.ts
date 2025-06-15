@@ -1,4 +1,8 @@
 export interface TodoIntegratorSettings {
+	// Azure Configuration
+	clientId: string;
+	tenantId: string;
+	
 	// Authentication
 	accessToken: string;
 	refreshToken: string;
@@ -63,6 +67,8 @@ export interface LogEntry {
 }
 
 export const DEFAULT_SETTINGS: TodoIntegratorSettings = {
+	clientId: '',
+	tenantId: 'common',
 	accessToken: '',
 	refreshToken: '',
 	tokenExpiry: 0,

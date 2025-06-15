@@ -2,13 +2,15 @@ import { TodoApiClient } from '../../src/api/todo-api-client';
 import { Logger } from '../../src/utils/logger';
 import { ErrorHandler } from '../../src/utils/error-handler';
 
+jest.mock('isomorphic-fetch');
+
 // Mock Microsoft Graph Client
 const mockApiRequest = {
 	get: jest.fn(),
 	post: jest.fn(),
 	patch: jest.fn(),
 	delete: jest.fn(),
-	select: jest.fn()
+	select: jest.fn().mockReturnThis()
 };
 
 const mockGraphClient = {
@@ -17,11 +19,9 @@ const mockGraphClient = {
 
 jest.mock('@microsoft/microsoft-graph-client', () => ({
 	Client: {
-		init: jest.fn().mockReturnValue(mockGraphClient)
+		init: jest.fn().mockImplementation(() => mockGraphClient)
 	}
 }));
-
-jest.mock('isomorphic-fetch');
 
 describe('TodoApiClient', () => {
 	let apiClient: TodoApiClient;

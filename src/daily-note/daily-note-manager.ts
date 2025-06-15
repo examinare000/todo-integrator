@@ -29,7 +29,7 @@ export class DailyNoteManager {
 	}
 
 	getTodayNote(): string {
-		const today = moment().format(this.dateFormat);
+		const today = (moment as any)().format(this.dateFormat);
 		const dailyNotePath = this.dailyNotePath.endsWith('/') 
 			? this.dailyNotePath 
 			: this.dailyNotePath + '/';
@@ -52,7 +52,7 @@ export class DailyNoteManager {
 				await this.app.vault.createFolder(dirPath);
 			}
 
-			const today = moment().format(this.dateFormat);
+			const today = (moment as any)().format(this.dateFormat);
 			const content = `# ${today}\n\n${this.todoSectionHeader}\n\n`;
 			
 			const newFile = await this.app.vault.create(todayNotePath, content);
@@ -72,7 +72,7 @@ export class DailyNoteManager {
 				throw new Error(`File not found: ${filePath}`);
 			}
 
-			const content = await this.app.vault.read(file);
+			const content = await this.app.vault.read(file as TFile);
 			const lines = content.split('\n');
 
 			// Look for existing todo section
@@ -85,7 +85,7 @@ export class DailyNoteManager {
 
 			// Create todo section if not found
 			lines.push('', this.todoSectionHeader, '');
-			await this.app.vault.modify(file, lines.join('\n'));
+			await this.app.vault.modify(file as TFile, lines.join('\n'));
 			
 			this.logger.info(`Created todo section in ${filePath}`);
 			return lines.length - 2; // Return the line number of the header
@@ -102,7 +102,7 @@ export class DailyNoteManager {
 				throw new Error(`File not found: ${filePath}`);
 			}
 
-			const content = await this.app.vault.read(file);
+			const content = await this.app.vault.read(file as TFile);
 			const lines = content.split('\n');
 
 			// Find todo section
@@ -135,7 +135,7 @@ export class DailyNoteManager {
 			const taskLine = `- [ ] ${taskTitle}`;
 			lines.splice(insertIndex, 0, taskLine);
 
-			await this.app.vault.modify(file, lines.join('\n'));
+			await this.app.vault.modify(file as TFile, lines.join('\n'));
 			this.logger.info(`Added task to ${filePath}: ${taskTitle}`);
 		} catch (error) {
 			const errorMessage = this.errorHandler.handleFileError(error);
@@ -150,7 +150,7 @@ export class DailyNoteManager {
 				throw new Error(`File not found: ${filePath}`);
 			}
 
-			const content = await this.app.vault.read(file);
+			const content = await this.app.vault.read(file as TFile);
 			const lines = content.split('\n');
 			const tasks: DailyNoteTask[] = [];
 
@@ -193,7 +193,7 @@ export class DailyNoteManager {
 				throw new Error(`File not found: ${filePath}`);
 			}
 
-			const content = await this.app.vault.read(file);
+			const content = await this.app.vault.read(file as TFile);
 			const lines = content.split('\n');
 
 			if (lineNumber >= lines.length) {
@@ -216,7 +216,7 @@ export class DailyNoteManager {
 			const completionMetadata = `[completion:: ${completionDate}]`;
 			lines[lineNumber] = `${indent}- [x] ${cleanTaskText} ${completionMetadata}`;
 
-			await this.app.vault.modify(file, lines.join('\n'));
+			await this.app.vault.modify(file as TFile, lines.join('\n'));
 			this.logger.info(`Updated task completion at line ${lineNumber + 1}: ${completionDate}`);
 		} catch (error) {
 			const errorMessage = this.errorHandler.handleFileError(error);
@@ -225,7 +225,7 @@ export class DailyNoteManager {
 	}
 
 	isValidDateFormat(dateString: string): boolean {
-		const date = moment(dateString, this.dateFormat, true);
+		const date = (moment as any)(dateString, this.dateFormat, true);
 		return date.isValid();
 	}
 

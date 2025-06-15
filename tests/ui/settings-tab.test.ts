@@ -9,42 +9,69 @@ const mockPlugin = {
 	saveSettings: jest.fn()
 };
 
+// Create a recursive mock element that supports chaining
+function createMockElement(): any {
+	return {
+		empty: jest.fn(),
+		setText: jest.fn(),
+		setAttr: jest.fn(),
+		createEl: jest.fn().mockImplementation(() => createMockElement()),
+		createDiv: jest.fn().mockImplementation(() => createMockElement()),
+		createSpan: jest.fn().mockImplementation(() => createMockElement()),
+		createText: jest.fn().mockReturnValue('mock-text')
+	};
+}
+
 jest.mock('obsidian', () => ({
 	PluginSettingTab: class MockPluginSettingTab {
-		containerEl = {
-			empty: jest.fn(),
-			createEl: jest.fn().mockReturnValue({
-				setText: jest.fn(),
-				createEl: jest.fn().mockReturnValue({
-					setText: jest.fn(),
-					setAttr: jest.fn()
-				})
-			}),
-			createDiv: jest.fn().mockReturnValue({
-				createEl: jest.fn().mockReturnValue({
-					setText: jest.fn(),
-					setAttr: jest.fn()
-				}),
-				createDiv: jest.fn().mockReturnValue({
-					createEl: jest.fn().mockReturnValue({
-						setText: jest.fn(),
-						setAttr: jest.fn()
-					})
-				})
-			})
-		};
+		containerEl = createMockElement();
 		app = mockApp;
 		plugin = mockPlugin;
 	},
 	Setting: jest.fn().mockImplementation(() => ({
 		setName: jest.fn().mockReturnThis(),
 		setDesc: jest.fn().mockReturnThis(),
-		addText: jest.fn().mockReturnThis(),
+		addText: jest.fn().mockImplementation((callback) => {
+			callback({
+				setPlaceholder: jest.fn().mockReturnThis(),
+				setValue: jest.fn().mockReturnThis(),
+				onChange: jest.fn().mockReturnThis()
+			});
+			return this;
+		}),
 		addTextArea: jest.fn().mockReturnThis(),
-		addToggle: jest.fn().mockReturnThis(),
-		addDropdown: jest.fn().mockReturnThis(),
-		addButton: jest.fn().mockReturnThis(),
-		addSlider: jest.fn().mockReturnThis(),
+		addToggle: jest.fn().mockImplementation((callback) => {
+			callback({
+				setValue: jest.fn().mockReturnThis(),
+				onChange: jest.fn().mockReturnThis()
+			});
+			return this;
+		}),
+		addDropdown: jest.fn().mockImplementation((callback) => {
+			callback({
+				addOptions: jest.fn().mockReturnThis(),
+				setValue: jest.fn().mockReturnThis(),
+				onChange: jest.fn().mockReturnThis()
+			});
+			return this;
+		}),
+		addButton: jest.fn().mockImplementation((callback) => {
+			callback({
+				setButtonText: jest.fn().mockReturnThis(),
+				setClass: jest.fn().mockReturnThis(),
+				onClick: jest.fn().mockReturnThis()
+			});
+			return this;
+		}),
+		addSlider: jest.fn().mockImplementation((callback) => {
+			callback({
+				setLimits: jest.fn().mockReturnThis(),
+				setValue: jest.fn().mockReturnThis(),
+				onChange: jest.fn().mockReturnThis(),
+				setDynamicTooltip: jest.fn().mockReturnThis()
+			});
+			return this;
+		}),
 		setClass: jest.fn().mockReturnThis()
 	})),
 	Notice: jest.fn()
@@ -113,7 +140,7 @@ describe('TodoIntegratorSettingsTab', () => {
 			settingsTab.display();
 
 			expect(settingsTab.containerEl.empty).toHaveBeenCalled();
-			expect(settingsTab.containerEl.createEl).toHaveBeenCalledWith('h2', { text: 'Microsoft Todo Integrator' });
+			expect(settingsTab.containerEl.createEl).toHaveBeenCalledWith('h2', { text: 'Todo Integrator Settings' });
 		});
 
 		it('should create authentication section', () => {
