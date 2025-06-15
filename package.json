@@ -1,6 +1,6 @@
 {
 	"name": "todo-integrator",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "Sync Obsidian checkboxes with Microsoft Todo tasks",
 	"main": "main.js",
 	"scripts": {
