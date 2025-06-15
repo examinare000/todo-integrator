@@ -116,39 +116,16 @@ export class TodoIntegratorSettingsTab extends PluginSettingTab {
 		
 		containerEl.createEl('h3', { text: '基本設定' });
 
-		const settings = this.pluginSettings.getCurrentSettings();
-
-		new Setting(containerEl)
-			.setName('Microsoft App Client ID')
-			.setDesc('Azure App Registration で取得した Client ID')
-			.addText(text => text
-				.setPlaceholder('Enter your Client ID')
-				.setValue(settings.clientId)
-				.onChange(async (value) => {
-					try {
-						this.pluginSettings.updateSetting('clientId', value);
-						await this.pluginSettings.saveSettings(this.pluginSettings.getCurrentSettings());
-					} catch (error) {
-						const errorMessage = this.errorHandler.handleFileError(error);
-						new Notice(`設定の保存に失敗しました: ${errorMessage}`);
-					}
-				}));
-
-		new Setting(containerEl)
-			.setName('Tenant ID')
-			.setDesc('Microsoft テナント ID (デフォルト: common)')
-			.addText(text => text
-				.setPlaceholder('common')
-				.setValue(settings.tenantId)
-				.onChange(async (value) => {
-					try {
-						this.pluginSettings.updateSetting('tenantId', value || 'common');
-						await this.pluginSettings.saveSettings(this.pluginSettings.getCurrentSettings());
-					} catch (error) {
-						const errorMessage = this.errorHandler.handleFileError(error);
-						new Notice(`設定の保存に失敗しました: ${errorMessage}`);
-					}
-				}));
+		// Info about the shared app registration
+		const infoDiv = containerEl.createDiv('app-info');
+		infoDiv.createEl('p', { 
+			text: 'このプラグインは共有のMicrosoft Appアプリケーションを使用します。',
+			cls: 'setting-item-description'
+		});
+		infoDiv.createEl('p', { 
+			text: 'Azure App Registrationの設定は不要です。直接認証を開始できます。',
+			cls: 'setting-item-description'
+		});
 
 		containerEl.createEl('hr');
 	}

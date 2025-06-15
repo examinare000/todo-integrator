@@ -53,16 +53,6 @@ export class PluginSettings {
 	validateSettings(settings: TodoIntegratorSettings): TodoIntegratorSettings {
 		const validated = { ...settings };
 
-		// Validate Client ID
-		if (!validated.clientId || validated.clientId.trim().length === 0) {
-			throw new Error('Client ID is required');
-		}
-
-		// Validate Tenant ID
-		if (!validated.tenantId) {
-			validated.tenantId = 'common';
-		}
-
 		// Validate Daily Note path
 		if (!this.validateDailyNotePath(validated.dailyNotePath)) {
 			throw new Error('Invalid Daily Note path');
@@ -155,12 +145,6 @@ export class PluginSettings {
 		this.settings.userName = '';
 	}
 
-	getClientConfig(): { clientId: string; tenantId: string } {
-		return {
-			clientId: this.settings.clientId,
-			tenantId: this.settings.tenantId
-		};
-	}
 
 	getDailyNoteConfig(): { 
 		dailyNotePath: string; 

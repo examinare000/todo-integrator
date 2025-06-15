@@ -156,10 +156,9 @@ export default class TodoIntegratorPlugin extends Plugin {
 	private async initializeAfterAuth(): Promise<void> {
 		try {
 			const settings = this.pluginSettings.getCurrentSettings();
-			const clientConfig = this.pluginSettings.getClientConfig();
 
 			// Initialize authentication manager
-			await this.authManager.initialize(clientConfig.clientId, clientConfig.tenantId);
+			await this.authManager.initialize();
 
 			// Initialize API client
 			this.todoApiClient.initialize(settings.accessToken);
@@ -182,13 +181,8 @@ export default class TodoIntegratorPlugin extends Plugin {
 		authModal.open();
 
 		try {
-			const settings = this.pluginSettings.getCurrentSettings();
-			if (!settings.clientId) {
-				throw new Error('設定でMicrosoft App Client IDを設定してください');
-			}
-
-			const clientConfig = this.pluginSettings.getClientConfig();
-			await this.authManager.initialize(clientConfig.clientId, clientConfig.tenantId);
+			// Initialize authentication manager with hardcoded config
+			await this.authManager.initialize();
 
 			// Device code flow with modal integration
 			const authResult = await this.authManager.authenticate();

@@ -1,6 +1,7 @@
 import { PublicClientApplication, AuthenticationResult } from '@azure/msal-node';
 import { Logger } from '../utils/logger';
 import { ErrorHandler } from '../utils/error-handler';
+import { getAzureConfig } from '../config/app-config';
 
 export class MSALAuthenticationManager {
 	private msalClient: PublicClientApplication | null = null;
@@ -12,12 +13,13 @@ export class MSALAuthenticationManager {
 		this.errorHandler = errorHandler;
 	}
 
-	async initialize(clientId: string, tenantId: string = 'common'): Promise<void> {
+	async initialize(): Promise<void> {
 		try {
+			const config = getAzureConfig();
 			this.msalClient = new PublicClientApplication({
 				auth: {
-					clientId,
-					authority: `https://login.microsoftonline.com/${tenantId}`
+					clientId: config.CLIENT_ID,
+					authority: `https://login.microsoftonline.com/${config.TENANT_ID}`
 				},
 				system: {
 					loggerOptions: {

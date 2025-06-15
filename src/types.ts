@@ -1,7 +1,5 @@
 export interface TodoIntegratorSettings {
 	// Authentication
-	clientId: string;
-	tenantId: string;
 	accessToken: string;
 	refreshToken: string;
 	tokenExpiry: number;
@@ -65,8 +63,6 @@ export interface LogEntry {
 }
 
 export const DEFAULT_SETTINGS: TodoIntegratorSettings = {
-	clientId: '',
-	tenantId: 'common',
 	accessToken: '',
 	refreshToken: '',
 	tokenExpiry: 0,
