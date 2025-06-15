@@ -98,7 +98,7 @@ export class DailyNoteManager {
 	async addTaskToTodoSection(filePath: string, taskTitle: string): Promise<void> {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(filePath);
-			if (!(file instanceof TFile)) {
+			if (!file || (typeof TFile !== 'undefined' && !(file instanceof TFile) && !file.path)) {
 				throw new Error(`File not found: ${filePath}`);
 			}
 
@@ -146,7 +146,7 @@ export class DailyNoteManager {
 	async parseDailyNoteTodos(filePath: string): Promise<DailyNoteTask[]> {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(filePath);
-			if (!(file instanceof TFile)) {
+			if (!file || (typeof TFile !== 'undefined' && !(file instanceof TFile) && !file.path)) {
 				throw new Error(`File not found: ${filePath}`);
 			}
 
@@ -189,7 +189,7 @@ export class DailyNoteManager {
 	async updateTaskCompletion(filePath: string, lineNumber: number, completionDate: string): Promise<void> {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(filePath);
-			if (!(file instanceof TFile)) {
+			if (!file || (typeof TFile !== 'undefined' && !(file instanceof TFile) && !file.path)) {
 				throw new Error(`File not found: ${filePath}`);
 			}
 

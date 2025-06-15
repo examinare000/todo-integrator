@@ -41,3 +41,26 @@ This is an Obsidian plugin built with TypeScript. The plugin demonstrates core O
 - Do NOT include "Generated with Claude Code" or "Co-Authored-By: Claude" in commit messages
 - Keep commit messages simple and descriptive
 - Default branch is `main` (not `master`)
+
+## Claude Code Best Practices
+
+### Task Management Strategy
+- **Break Down Large Tasks**: Always decompose complex tasks into small, specific TodoWrite items
+- **Step-by-Step Execution**: Complete one todo at a time, updating status as progress is made
+- **Minimize Context**: Focus on the immediate task while maintaining awareness of the overall goal
+- **Frequent TodoRead**: Use TodoRead proactively to stay aligned with current objectives
+
+### Problem-Solving Approach
+1. **Analyze**: Understand the problem and identify root causes
+2. **Decompose**: Break into smaller, manageable sub-tasks
+3. **Prioritize**: Use high/medium/low priority levels appropriately
+4. **Execute**: Implement solutions incrementally
+5. **Validate**: Test each step before proceeding
+6. **Iterate**: Update todos and continue until completion
+
+### Development Workflow
+- Use TodoWrite to plan work before starting implementation
+- Mark todos as "in_progress" when actively working
+- Mark todos as "completed" immediately upon finishing
+- Create new todos when discovering additional work during implementation
+- Maintain clean separation between planning and execution phases

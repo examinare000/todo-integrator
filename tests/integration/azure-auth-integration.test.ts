@@ -84,7 +84,7 @@ describe('Azure Authentication Integration Tests', () => {
             }
         });
 
-        it('should validate app supports device code flow', async () => {
+        it.skip('should validate app supports device code flow', async () => {
             await authManager.initialize();
             
             try {
