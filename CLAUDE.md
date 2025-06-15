@@ -33,6 +33,10 @@ This is an Obsidian plugin built with TypeScript. The plugin demonstrates core O
 - Whole design and implementation plan should be included in `design.md`.
 
 ## Git Commit Guidelines
+- create an appropriately-named branch for each development and perform development in it.
+- development branch is merged into `main` when the development is done.
+- ensure to always keep `main` branch clean. all tests should pass in `main` branch.  
+- version number should increase when each development branch is merged into `main` branch.
 - Use Japanese commit messages (one line)
 - Do NOT include "Generated with Claude Code" or "Co-Authored-By: Claude" in commit messages
 - Keep commit messages simple and descriptive

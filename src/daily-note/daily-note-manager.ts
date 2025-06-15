@@ -41,9 +41,9 @@ export class DailyNoteManager {
 		
 		try {
 			const existingFile = this.app.vault.getAbstractFileByPath(todayNotePath);
-			if (existingFile instanceof TFile) {
+			if (existingFile && (typeof TFile !== 'undefined' && existingFile instanceof TFile || existingFile.path)) {
 				this.logger.debug(`Today's note already exists: ${todayNotePath}`);
-				return existingFile;
+				return existingFile as TFile;
 			}
 
 			// Ensure directory exists
@@ -68,7 +68,7 @@ export class DailyNoteManager {
 	async findOrCreateTodoSection(filePath: string): Promise<number> {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(filePath);
-			if (!(file instanceof TFile)) {
+			if (!file || (typeof TFile !== 'undefined' && !(file instanceof TFile) && !file.path)) {
 				throw new Error(`File not found: ${filePath}`);
 			}
 

@@ -10,6 +10,12 @@ export class Plugin {
         getFiles: jest.fn(() => []),
         read: jest.fn(() => Promise.resolve('')),
         modify: jest.fn(() => Promise.resolve()),
+        getAbstractFileByPath: jest.fn(),
+        createFolder: jest.fn(() => Promise.resolve()),
+        create: jest.fn(() => Promise.resolve({ path: 'test.md' })),
+        adapter: {
+          exists: jest.fn(() => Promise.resolve(false))
+        }
       },
       workspace: {
         on: jest.fn(),
@@ -85,5 +91,15 @@ export class ButtonComponent {
 
 // その他必要なエクスポート
 export const Component = class {};
-export const TFile = class {};
+export const TFile = class {
+  path: string = '';
+  constructor(path?: string) {
+    if (path) this.path = path;
+  }
+};
 export const Vault = class {};
+
+// momentのモック
+export const moment = jest.fn().mockImplementation((date?: any) => ({
+  format: jest.fn().mockReturnValue('2023-01-01')
+}));

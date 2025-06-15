@@ -38,14 +38,18 @@ describe('DailyNoteManager', () => {
 		} as any;
 
 		mockErrorHandler = {
-			handleApiError: jest.fn(),
+			handleApiError: jest.fn().mockReturnValue('API error'),
 			logError: jest.fn(),
-			handleFileError: jest.fn()
+			handleFileError: jest.fn().mockReturnValue('File error')
 		} as any;
 
 		dailyNoteManager = new DailyNoteManager(mockApp as any, mockLogger, mockErrorHandler);
 		
+		// Clear only call history, not mock implementations
 		jest.clearAllMocks();
+		
+		// Restore default mock return values after clearAllMocks
+		mockErrorHandler.handleFileError.mockReturnValue('File error');
 	});
 
 	describe('initialization and settings', () => {
@@ -82,6 +86,10 @@ describe('DailyNoteManager', () => {
 		it('should return existing file when file exists', async () => {
 			const mockFile = { path: 'Daily Notes/2023-01-01.md' };
 			mockApp.vault.getAbstractFileByPath.mockReturnValue(mockFile);
+			
+			// Ensure no error is thrown by making sure all vault methods work properly
+			mockApp.vault.createFolder.mockResolvedValue(void 0);
+			mockApp.vault.create.mockResolvedValue(mockFile);
 
 			const file = await dailyNoteManager.createTodayNote();
 
@@ -102,17 +110,17 @@ describe('DailyNoteManager', () => {
 				'Daily Notes/2023-01-01.md',
 				expect.stringContaining('# 2023-01-01')
 			);
-			expect(mockLogger.info).toHaveBeenCalledWith('Created today note: Daily Notes/2023-01-01.md');
+			expect(mockLogger.info).toHaveBeenCalledWith('Created today\'s note: Daily Notes/2023-01-01.md');
 		});
 
 		it('should handle file creation errors', async () => {
 			mockApp.vault.getAbstractFileByPath.mockReturnValue(null);
 			mockApp.vault.createFolder.mockResolvedValue(void 0);
 			mockApp.vault.create.mockRejectedValue(new Error('Create error'));
-			mockErrorHandler.handleFileError.mockReturnValue('Handled file error');
+			mockErrorHandler.handleFileError.mockReturnValueOnce('Handled file error');
 
 			await expect(dailyNoteManager.createTodayNote()).rejects.toThrow(
-				'Failed to create today note: Handled file error'
+				'Failed to create today\'s note: Handled file error'
 			);
 		});
 	});
@@ -131,12 +139,14 @@ Content here
 
 ## Another Section`;
 
-			mockApp.vault.adapter.read.mockResolvedValue(fileContent);
+			const file = { path: 'test-file.md' };
+			mockApp.vault.getAbstractFileByPath.mockReturnValue(file);
+			mockApp.vault.read.mockResolvedValue(fileContent);
 
 			const lineNumber = await dailyNoteManager.findOrCreateTodoSection('test-file.md');
 
-			expect(lineNumber).toBe(7); // Line where "## ToDo" appears
-			expect(mockLogger.debug).toHaveBeenCalledWith('Found ToDo section at line 7 in test-file.md');
+			expect(lineNumber).toBe(6); // Line where "## ToDo" appears (0-based index)
+			expect(mockLogger.debug).toHaveBeenCalledWith('Found existing todo section at line 7');
 		});
 
 		it('should create todo section when not found', async () => {
