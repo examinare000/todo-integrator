@@ -28,52 +28,56 @@ jest.mock('obsidian', () => ({
 		app = mockApp;
 		plugin = mockPlugin;
 	},
-	Setting: jest.fn().mockImplementation(() => ({
-		setName: jest.fn().mockReturnThis(),
-		setDesc: jest.fn().mockReturnThis(),
-		addText: jest.fn().mockImplementation((callback) => {
-			callback({
-				setPlaceholder: jest.fn().mockReturnThis(),
-				setValue: jest.fn().mockReturnThis(),
-				onChange: jest.fn().mockReturnThis()
-			});
-			return this;
-		}),
-		addTextArea: jest.fn().mockReturnThis(),
-		addToggle: jest.fn().mockImplementation((callback) => {
-			callback({
-				setValue: jest.fn().mockReturnThis(),
-				onChange: jest.fn().mockReturnThis()
-			});
-			return this;
-		}),
-		addDropdown: jest.fn().mockImplementation((callback) => {
-			callback({
-				addOptions: jest.fn().mockReturnThis(),
-				setValue: jest.fn().mockReturnThis(),
-				onChange: jest.fn().mockReturnThis()
-			});
-			return this;
-		}),
-		addButton: jest.fn().mockImplementation((callback) => {
-			callback({
-				setButtonText: jest.fn().mockReturnThis(),
-				setClass: jest.fn().mockReturnThis(),
-				onClick: jest.fn().mockReturnThis()
-			});
-			return this;
-		}),
-		addSlider: jest.fn().mockImplementation((callback) => {
-			callback({
-				setLimits: jest.fn().mockReturnThis(),
-				setValue: jest.fn().mockReturnThis(),
-				onChange: jest.fn().mockReturnThis(),
-				setDynamicTooltip: jest.fn().mockReturnThis()
-			});
-			return this;
-		}),
-		setClass: jest.fn().mockReturnThis()
-	})),
+	Setting: jest.fn().mockImplementation(function() {
+		const mockThis = {
+			setName: jest.fn().mockReturnValue(mockThis),
+			setDesc: jest.fn().mockReturnValue(mockThis),
+			addText: jest.fn().mockImplementation((callback) => {
+				callback({
+					setPlaceholder: jest.fn().mockReturnThis(),
+					setValue: jest.fn().mockReturnThis(),
+					onChange: jest.fn().mockReturnThis()
+				});
+				return mockThis;
+			}),
+			addTextArea: jest.fn().mockReturnValue(mockThis),
+			addToggle: jest.fn().mockImplementation((callback) => {
+				callback({
+					setValue: jest.fn().mockReturnThis(),
+					onChange: jest.fn().mockReturnThis()
+				});
+				return mockThis;
+			}),
+			addDropdown: jest.fn().mockImplementation((callback) => {
+				callback({
+					addOption: jest.fn().mockReturnThis(),
+					addOptions: jest.fn().mockReturnThis(),
+					setValue: jest.fn().mockReturnThis(),
+					onChange: jest.fn().mockReturnThis()
+				});
+				return mockThis;
+			}),
+			addButton: jest.fn().mockImplementation((callback) => {
+				callback({
+					setButtonText: jest.fn().mockReturnThis(),
+					setClass: jest.fn().mockReturnThis(),
+					onClick: jest.fn().mockReturnThis()
+				});
+				return mockThis;
+			}),
+			addSlider: jest.fn().mockImplementation((callback) => {
+				callback({
+					setLimits: jest.fn().mockReturnThis(),
+					setValue: jest.fn().mockReturnThis(),
+					onChange: jest.fn().mockReturnThis(),
+					setDynamicTooltip: jest.fn().mockReturnThis()
+				});
+				return mockThis;
+			}),
+			setClass: jest.fn().mockReturnValue(mockThis)
+		};
+		return mockThis;
+	}),
 	Notice: jest.fn()
 }));
 

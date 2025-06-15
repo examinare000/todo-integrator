@@ -6,10 +6,25 @@ jest.mock('isomorphic-fetch');
 
 // Mock Microsoft Graph Client
 const mockApiRequest = {
-	get: jest.fn(),
-	post: jest.fn(),
-	patch: jest.fn(),
-	delete: jest.fn(),
+	get: jest.fn().mockResolvedValue({ 
+		value: [{ 
+			id: 'mock-list-id', 
+			displayName: 'Tasks',
+			isOwner: true,
+			isShared: false,
+			wellknownListName: 'defaultList'
+		}] 
+	}),
+	post: jest.fn().mockResolvedValue({
+		id: 'mock-task-id',
+		title: 'Mock Task',
+		status: 'notStarted'
+	}),
+	patch: jest.fn().mockResolvedValue({
+		id: 'mock-task-id',
+		status: 'completed'
+	}),
+	delete: jest.fn().mockResolvedValue({}),
 	select: jest.fn().mockReturnThis()
 };
 
@@ -37,8 +52,10 @@ describe('TodoApiClient', () => {
 		} as any;
 
 		mockErrorHandler = {
-			handleApiError: jest.fn(),
-			logError: jest.fn()
+			handleApiError: jest.fn().mockReturnValue('Mock error message'),
+			logError: jest.fn(),
+			handleFileError: jest.fn().mockReturnValue('Mock file error'),
+			handleNetworkError: jest.fn().mockReturnValue('Mock network error')
 		} as any;
 
 		apiClient = new TodoApiClient(mockLogger, mockErrorHandler);
